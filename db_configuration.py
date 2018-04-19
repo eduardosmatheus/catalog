@@ -9,7 +9,7 @@ Base = declarative_base()
 class CategoryItem(Base):
     __tablename__ = 'category_item'
     id = Column(Integer, primary_key=True)
-    description = Column(String(255), nullable=False)
+    name = Column(String(255), nullable=False)
     category_id = Column(Integer, ForeignKey('category.id'))
 
 class Category(Base):
