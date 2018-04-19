@@ -5,11 +5,22 @@
     </head>
 
     <body>
-        <aside class="categories"></aside>
+        <h1>Catálogo de itens</h1>
+        <aside class="categories">
+            <ul class="categories">
+                {% for category in categories %}
+                <li>
+                    <a href="{{url_for('getCategory', category_id = category.id)}}">
+                        {{ category.name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>            
+        </aside>
         <div class="main-content">
             {% block content %}
+                
             {% endblock %}
         </div>
     </body>
-    
 </html>
