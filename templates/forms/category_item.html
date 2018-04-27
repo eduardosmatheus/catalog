@@ -1,0 +1,8 @@
+{% extends "home.html" %}
+{% block content %}
+    <form action="{{url_for('addNewCategoryItem', id = id)}}" method="POST">
+        <input type="text" name="name" placeholder="Nome"/>
+        <input type="text" name="details" placeholder="Detalhes"/>
+        <input type="submit" value="Confirmar"/>
+    </form>
+{% endblock %}

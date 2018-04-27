@@ -1,26 +1,25 @@
 <!doctype html>
 <html>
     <head>
+        <link rel="stylesheet" href="{{url_for('static', filename='styles.css')}}"/>
         <title>Catalog</title>
     </head>
 
     <body>
-        <h1>Catálogo de itens</h1>
+        <h1><a href="{{url_for('home')}}">Catálogo de itens</a></h1>
         <aside class="categories">
-            <ul class="categories">
+            <ul>
                 {% for category in categories %}
-                <li>
-                    <a href="{{url_for('getCategory', category_id = category.id)}}">
-                        {{ category.name }}
-                    </a>
-                </li>
+                   <li><a href="{{url_for('getCategory', id = category.id)}}">{{ category.name }}</a></li>
                 {% endfor %}
-            </ul>            
+            </ul>
+            <a href="{{url_for('newCategory')}}">New Category</a>
+            {% if session.logged_in %}
+            {% endif %}
         </aside>
         <div class="main-content">
-            {% block content %}
-                
-            {% endblock %}
+        {% block content %}
+        {% endblock %}
         </div>
     </body>
 </html>
