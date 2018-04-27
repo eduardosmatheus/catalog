@@ -6,14 +6,16 @@ from sqlalchemy import create_engine
 
 Base = declarative_base()
 
-class CategoryItem(Base):
-    __tablename__ = 'category_item'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(255), nullable=False)
-    category_id = Column(Integer, ForeignKey('category.id'))
-
 class Category(Base):
     __tablename__ = 'category'
     id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False)
-    items = relationship(CategoryItem)
+    
+class CategoryItem(Base):
+    __tablename__ = 'category_item'
+    id = Column("id", Integer, primary_key=True)
+    name = Column("name", String(255), nullable=False)
+    details = Column("details", String(255))
+    category_id = Column("category_id", Integer, ForeignKey('category.id'))
+    category = relationship(Category)
+

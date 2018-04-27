@@ -1,12 +1,13 @@
 from flask import Flask, request, redirect, url_for, render_template
 from sqlalchemy import create_engine, update
-from sqlalchemy.orm import sessionmaker, lazyload
+from sqlalchemy.orm import sessionmaker, joinedload
 from db_configuration import Base, Category, CategoryItem
 
 app = Flask(__name__)
 
 engine = create_engine('sqlite:///catalog.db')
 Base.metadata.bind = engine
+# Base.metadata.drop_all()
 Base.metadata.create_all(engine)
 
 DBSession = sessionmaker(bind=engine)
@@ -14,41 +15,73 @@ session = DBSession()
 
 @app.route("/", methods=["GET"])
 def home():
-    return render_template("home.html")
-
-@app.route('/categories', methods=['GET'])
-def getCategories():
     categories = session.query(Category).all()
-    return render_template("categories.html", categories=categories)
+    return render_template("home.html", categories=categories)
 
-@app.route('/categories/<int:category_id>')
-def getCategory(category_id):
-    category = session.query(Category).get(category_id).options(lazyload('children'))
-    return render_template("category.html", category=category)
+@app.route('/categories/<int:id>')
+def getCategory(id):
+    category = session.query(Category).get(id)
+    items = session.query(CategoryItem).filter(CategoryItem.category_id==id).all()
+    return render_template("containers/category.html", category=category, items=items)
 
-@app.route('/categories', methods=["POST"])
+@app.route("/categories/new", methods=["GET"])
+def newCategory():
+    return render_template("forms/category.html", category=None)
+
+@app.route('/categories/new', methods=["POST"])
 def addNewCategory():
-    try:
-        newCategory = Category(name = request.form["name"], items = [])
-        session.add(newCategory)
-        session.commit()
-        return redirect("/categories", 200)
-    except:
-        session.rollback()
-        return "Erro ao inserir uma categoria."
+    newCategory = Category(name = request.form["name"])
+    session.add(newCategory)
+    session.commit()
+    return redirect(url_for("home"))
 
-@app.route('/categories/<int:category_id>', methods=["PUT", "DELETE"])
-def updateCategory(category_id):
-    currentCategory = session.query(Category).get(category_id)
-
-    if request.method == "PUT":
-        currentCategory = Category(name = request.form["name"], items = request.form[""])
+@app.route("/categories/<int:id>/edit", methods=["GET", "POST"])
+def updateCategory(id):
+    currentCategory = session.query(Category).get(id)
+    if request.method == "POST":
+        currentCategory.name = request.form["name"]
         session.commit()
-        return "Categoria atualizada com sucesso!"
+        return redirect(url_for("home"))
     else:
-        session.delete(currentCategory)
-        session.commit()
-        return "Categoria removida com sucesso!"
+        return render_template("forms/category.html", category=currentCategory)
+    
+@app.route("/categories/<int:id>/delete")
+def deleteCategory(id):
+    currentCategory = session.query(Category).get(id)
+    session.delete(currentCategory)
+    session.commit()
+    return redirect(url_for("home"))
+
+@app.route("/categories/<int:id>/items/new")
+def newCategoryItem(id):
+    return render_template("forms/category_item.html", id = id)
+
+@app.route('/categories/<int:id>/items', methods=["POST"])
+def addNewCategoryItem(id):
+    newCategoryItem = CategoryItem(name = request.form["name"], details = request.form["details"], category_id=id)
+    session.add(newCategoryItem)
+    session.commit()
+    return redirect(url_for("home"))
+
+@app.route("/categories/<int:id>/items/<int:item_id>")
+def getCategoryItem(id, item_id):
+    item = session.query(CategoryItem).get(item_id)
+    return render_template("containers/category_item.html", item = item)
+
+@app.route("/categories/<int:id>/items/<int:item_id>/edit")
+def editCategoryItem(id, item_id):
+    currentItem = session.query(CategoryItem).get(item_id)
+    currentItem.name = request.form["name"]
+    currentItem.details = request.form["details"]
+    session.commit()
+    return redirect(url_for("home"))
+
+@app.route("/categories/<int:id>/items/<int:item_id>/delete")
+def deleteCategoryItem(id, item_id):
+    currentItem = session.query(CategoryItem).get(item_id)
+    session.delete(currentItem)
+    session.commit()
+    return redirect(url_for("home"))
 
 if __name__ == '__main':
     app.debug = True
