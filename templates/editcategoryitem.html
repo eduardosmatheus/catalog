@@ -1,0 +1,8 @@
+{% extends "main.html" %}
+{% block content %}
+<form class="category-item" action="{{url_for('updateCategoryItem', id=item.category_id, item_id = item.id)}}" method="POST">
+    <input type="text" value="{{item.name}}" name="name" placeholder="Nome"/>
+    <input type="text" value="{{item.details}}" name="details" placeholder="Detalhes"/>
+    <input type="submit" value="Confirmar"/>
+</form>
+{% endblock %}

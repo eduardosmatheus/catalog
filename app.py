@@ -15,20 +15,20 @@ session = DBSession()
 
 @app.route("/", methods=["GET"])
 def home():
-    categories = session.query(Category).all()
-    return render_template("home.html", categories=categories)
+    data = session.query(Category).all()
+    return render_template("categories.html", categories=data)
 
 @app.route('/categories/<int:id>')
 def getCategory(id):
     category = session.query(Category).get(id)
-    items = session.query(CategoryItem).filter(CategoryItem.category_id==id).all()
-    return render_template("containers/category.html", category=category, items=items)
+    items = session.query(CategoryItem).filter(CategoryItem.category_id == id).all()
+    return render_template("category.html", category=category, items=items)
 
 @app.route("/categories/new", methods=["GET"])
 def newCategory():
-    return render_template("forms/category.html", category=None)
+    return render_template("newcategory.html", category=None)
 
-@app.route('/categories/new', methods=["POST"])
+@app.route("/categories/new", methods=["POST"])
 def addNewCategory():
     newCategory = Category(name = request.form["name"])
     session.add(newCategory)
@@ -43,7 +43,7 @@ def updateCategory(id):
         session.commit()
         return redirect(url_for("home"))
     else:
-        return render_template("forms/category.html", category=currentCategory)
+        return render_template("category.html", category=currentCategory)
     
 @app.route("/categories/<int:id>/delete")
 def deleteCategory(id):
@@ -54,7 +54,7 @@ def deleteCategory(id):
 
 @app.route("/categories/<int:id>/items/new")
 def newCategoryItem(id):
-    return render_template("forms/category_item.html", id = id)
+    return render_template("newcategoryitem.html", id = id)
 
 @app.route('/categories/<int:id>/items', methods=["POST"])
 def addNewCategoryItem(id):
@@ -66,10 +66,16 @@ def addNewCategoryItem(id):
 @app.route("/categories/<int:id>/items/<int:item_id>")
 def getCategoryItem(id, item_id):
     item = session.query(CategoryItem).get(item_id)
-    return render_template("containers/category_item.html", item = item)
+    return render_template("category_item.html", item = item)
 
-@app.route("/categories/<int:id>/items/<int:item_id>/edit")
+@app.route("/categories/<int:id>/items/<int:item_id>/edit", methods=["GET"])
 def editCategoryItem(id, item_id):
+    currentItem = session.query(CategoryItem).get(item_id)
+    return render_template("editcategoryitem.html", item=currentItem)
+
+@app.route("/categories/<int:id>/items/<int:item_id>/edit", methods=["POST"])
+def updateCategoryItem(id, item_id):
+    print("Chegueii")
     currentItem = session.query(CategoryItem).get(item_id)
     currentItem.name = request.form["name"]
     currentItem.details = request.form["details"]
@@ -83,6 +89,6 @@ def deleteCategoryItem(id, item_id):
     session.commit()
     return redirect(url_for("home"))
 
-if __name__ == '__main':
+if __name__ == '__main__':
     app.debug = True
     app.run(host='0.0.0.0', port=5000)

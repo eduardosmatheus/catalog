@@ -1,0 +1,43 @@
+body {
+	width: 100%;
+	height: 100%;
+	max-height: 100%;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	font-size: 20px;
+
+}
+
+a {
+	text-decoration: none;
+}
+
+.header {
+	text-align: center;
+}
+
+.content {
+	width: 100%;
+	height: 100%;
+	display: grid;
+	justify-content: center;
+}
+
+.categories {
+	padding: 20px;
+	width: 40%;
+	height: 100%;
+	max-height: 100%;
+	max-width: 20%;
+	display: grid;
+	grid-template-rows: auto auto;
+}
+
+.new-category, .new-category-item, .category, .category-item  {
+	padding: 20px;
+}
+
+.new-category input {
+	margin-bottom: 10px;
+}

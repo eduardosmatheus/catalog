@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+    <head>
+        <link rel="stylesheet" href="{{url_for('static', filename='styles.css')}}" />
+        <title>Catalog Project</title>
+    </head>
+
+    <body>
+        <div class="header">
+            <h1><a href="{{url_for('home')}}">Items Catalog</a></h1>
+        </div>
+        <div class="content">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </body>
+</html>

@@ -1,0 +1,16 @@
+{% extends "main.html" %}
+{% block content %}
+    <div class="category">
+        <h2>{{ category.name }}</h2>
+        <ul>
+            {% for item in items %}
+            <li>
+                <a href="{{url_for('getCategoryItem', id = category.id, item_id = item.id)}}">{{ item.name }}</a>
+            </li>
+            {% endfor %}
+            <a href="{{url_for('newCategoryItem', id = category.id)}}">Add item</a>
+        </ul>
+        <a href="{{url_for('updateCategory', id = category.id)}}">Edit</a>
+        <a href="{{url_for('deleteCategory', id = category.id)}}">Delete</a>
+    </div>
+{% endblock %}
