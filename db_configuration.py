@@ -10,6 +10,8 @@ class User(Base):
     __tablename__ = 'user'
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
+    email = Column(String(255))
+    picture = Column(String(255))
 
 class Category(Base):
     __tablename__ = 'category'
