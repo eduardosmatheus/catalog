@@ -13,7 +13,7 @@ app.secret_key = b'\x98z\xe5\xbb\xce\xba\x7f\x7f\x1bi?\x90\x96X7+'
 
 engine = create_engine('sqlite:///catalog.db')
 Base.metadata.bind = engine
-# Base.metadata.drop_all()
+Base.metadata.drop_all()
 Base.metadata.create_all(engine)
 
 # Sessao do banco
@@ -25,25 +25,22 @@ CLIENT_ID = json.loads(open('client-secrets.json', 'r').read())['web']['client_i
 
 @app.route('/login')
 def login():
-    state = ''.join(random.choice(string.ascii_uppercase + string.digits)
-                    for x in range(32))
+    state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(32))
     login_session['state'] = state
-    return render_template('login.html', state=state)
+    return render_template('main.html', state=state)
 
 # Home page
 @app.route("/", methods=["GET"])
 def home():
-    if 'user' in login_session:
+    if 'user_id' in login_session:
         data = session.query(Category).all()
         return render_template("categories.html", categories=data)
     else:
         return redirect(url_for('login'))
 
-# Sign in
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
     # Validate state token
-    print(request.args.get('state'))
     if request.args.get('state') != login_session['state']:
         response = make_response(json.dumps('Invalid state parameter.'), 401)
         response.headers['Content-Type'] = 'application/json'
@@ -65,8 +62,7 @@ def gconnect():
 
     # Check that the access token is valid.
     access_token = credentials.access_token
-    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
-           % access_token)
+    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s' % access_token)
     h = httplib2.Http()
     result = json.loads(h.request(url, 'GET')[1])
     # If there was an error in the access token info, abort.
@@ -93,11 +89,9 @@ def gconnect():
 
     stored_access_token = login_session.get('access_token')
     stored_gplus_id = login_session.get('gplus_id')
+
     if stored_access_token is not None and gplus_id == stored_gplus_id:
-        response = make_response(json.dumps('Current user is already connected.'),
-                                 200)
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        return redirect(url_for('home'))
 
     # Store the access token in the session for later use.
     login_session['access_token'] = credentials.access_token
@@ -105,7 +99,7 @@ def gconnect():
 
     # Get user info
     userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
-    params = {'access_token': credentials.access_token, 'alt': 'json'}
+    params = { 'access_token': credentials.access_token, 'alt': 'json' }
     answer = requests.get(userinfo_url, params=params)
 
     data = answer.json()
@@ -118,23 +112,36 @@ def gconnect():
 
     if not user_id:
         createUser(login_session)
-    
-    login_session['user_id'] = user_id
 
-    output = ''
-    output += '<h1>Welcome, '
-    output += login_session['username']
-    output += '!</h1>'
-    output += '<img src="'
-    output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
-    flash("you are now logged in as %s" % login_session['username'])
-    print("done!")
-    return output
+    login_session['user_id'] = user_id
+    return redirect(url_for('getCategories'))
+
+@app.route('/gdisconnect')
+def gdisconnect():
+    access_token = login_session.get('access_token')
+    if access_token is None:
+        response = make_response(json.dumps('Current user not connected.'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    
+    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
+    h = httplib2.Http()
+    result = h.request(url, 'GET', headers={'content-type': 'application/x-www-form-urlencoded'})[0]
+    if result['status'] == '200':
+        del login_session['access_token']
+        del login_session['gplus_id']
+        del login_session['username']
+        del login_session['email']
+        del login_session['picture']
+        del login_session['user_id']
+        return redirect(url_for('home'))
+    else:
+        response = make_response(json.dumps('Failed to revoke token for given user.', 400))
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
 def createUser(login_session):
-    newUser = User(name=login_session['username'], email=login_session[
-                   'email'], picture=login_session['picture'])
+    newUser = User(name=login_session['username'], email=login_session['email'], picture=login_session['picture'])
     session.add(newUser)
     session.commit()
     user = session.query(User).filter_by(email=login_session['email']).one()
@@ -153,7 +160,11 @@ def getUserID(email):
     except:
         return None
 
-# CRUDs
+@app.route('/categories')
+def getCategories():
+    categories = session.query(Category).all()
+    return render_template("categories.html", categories=categories)
+
 @app.route('/categories/<int:id>')
 def getCategory(id):
     category = session.query(Category).get(id)
@@ -167,7 +178,7 @@ def newCategory():
 @app.route("/categories/new", methods=["POST"])
 def addNewCategory():
     try:
-        newCategory = Category(name = request.form["name"])
+        newCategory = Category(name = request.form["name"], user_id=login_session['user_id'])
         session.add(newCategory)
         session.commit()
     except:
@@ -200,7 +211,12 @@ def newCategoryItem(id):
 
 @app.route('/categories/<int:id>/items', methods=["POST"])
 def addNewCategoryItem(id):
-    newCategoryItem = CategoryItem(name = request.form["name"], details = request.form["details"], category_id=id)
+    newCategoryItem = CategoryItem(
+        name = request.form["name"],
+        details = request.form["details"],
+        category_id=id,
+        user_id=login_session['user_id']
+    )
     try:
         session.add(newCategoryItem)
         session.commit()

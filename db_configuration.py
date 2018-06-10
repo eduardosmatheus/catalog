@@ -17,6 +17,8 @@ class Category(Base):
     __tablename__ = 'category'
     id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False)
+    user_id = Column(Integer, ForeignKey("user.id"))
+    user = relationship(User)
     
 class CategoryItem(Base):
     __tablename__ = 'category_item'
@@ -25,4 +27,6 @@ class CategoryItem(Base):
     details = Column("details", String(255))
     category_id = Column("category_id", Integer, ForeignKey('category.id'))
     category = relationship(Category)
+    user_id = Column(Integer, ForeignKey("user.id"))
+    user = relationship(User)
 
