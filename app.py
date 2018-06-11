@@ -13,7 +13,7 @@ app.secret_key = b'\x98z\xe5\xbb\xce\xba\x7f\x7f\x1bi?\x90\x96X7+'
 
 engine = create_engine('sqlite:///catalog.db')
 Base.metadata.bind = engine
-Base.metadata.drop_all()
+# Base.metadata.drop_all()
 Base.metadata.create_all(engine)
 
 # Sessao do banco
@@ -123,11 +123,29 @@ def gdisconnect():
         response = make_response(json.dumps('Current user not connected.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
+
+    url = 'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s' % access_token
+    validateToken = httplib2.Http()
+    result = json.loads(validateToken.request(url, 'GET')[1])
     
-    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
-    h = httplib2.Http()
-    result = h.request(url, 'GET', headers={'content-type': 'application/x-www-form-urlencoded'})[0]
-    if result['status'] == '200':
+    if result.get('error') is None:
+        url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
+        h = httplib2.Http()
+        result = h.request(url, 'GET', headers={'content-type': 'application/x-www-form-urlencoded'})[0]
+        
+        if result['status'] == '200':
+            del login_session['access_token']
+            del login_session['gplus_id']
+            del login_session['username']
+            del login_session['email']
+            del login_session['picture']
+            del login_session['user_id']
+            return redirect(url_for('home'))
+        else:
+            response = make_response(json.dumps('Failed to revoke token for given user.'), 400)
+            response.headers['Content-Type'] = 'application/json'
+            return response
+    else:
         del login_session['access_token']
         del login_session['gplus_id']
         del login_session['username']
@@ -135,10 +153,6 @@ def gdisconnect():
         del login_session['picture']
         del login_session['user_id']
         return redirect(url_for('home'))
-    else:
-        response = make_response(json.dumps('Failed to revoke token for given user.', 400))
-        response.headers['Content-Type'] = 'application/json'
-        return response
 
 def createUser(login_session):
     newUser = User(name=login_session['username'], email=login_session['email'], picture=login_session['picture'])
@@ -173,12 +187,13 @@ def getCategory(id):
 
 @app.route("/categories/new", methods=["GET"])
 def newCategory():
-    return render_template("newcategory.html", category=None)
+    return render_template("category_form.html", category=None)
 
 @app.route("/categories/new", methods=["POST"])
 def addNewCategory():
     try:
-        newCategory = Category(name = request.form["name"], user_id=login_session['user_id'])
+        currentUser = getUserID(login_session['email'])
+        newCategory = Category(name = request.form["name"], user_id=currentUser)
         session.add(newCategory)
         session.commit()
     except:
@@ -196,7 +211,7 @@ def updateCategory(id):
             session.rollback()
         return redirect(url_for("home"))
     else:
-        return render_template("category.html", category=currentCategory)
+        return render_template("category_form.html", category=currentCategory)
     
 @app.route("/categories/<int:id>/delete")
 def deleteCategory(id):
@@ -211,11 +226,12 @@ def newCategoryItem(id):
 
 @app.route('/categories/<int:id>/items', methods=["POST"])
 def addNewCategoryItem(id):
+    currentUser = getUserID(login_session['email'])
     newCategoryItem = CategoryItem(
         name = request.form["name"],
         details = request.form["details"],
         category_id=id,
-        user_id=login_session['user_id']
+        user_id=currentUser
     )
     try:
         session.add(newCategoryItem)
