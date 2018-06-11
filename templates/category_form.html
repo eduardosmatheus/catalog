@@ -1,0 +1,18 @@
+{% extends "main.html" %}
+{% block content %}
+<div class="new-category">
+	<div>
+		<form action="{{
+			url_for('addNewCategory')
+			if category is none
+			else url_for('updateCategory', id=category.id)
+		}}"
+			method="POST">
+			<div class="form-group">
+				<input class="form-control" type="text" name="name" value="{{category.name if category is not none else ''}}" placeholder="Nome"/>
+			</div>
+			<input class="btn btn-primary" type="submit" value="Confirmar"/>
+		</form>
+	</div>
+</div>
+{% endblock %}

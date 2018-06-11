@@ -1,16 +1,30 @@
 {% extends "main.html" %}
 {% block content %}
-    <div class="category">
-        <h2>{{ category.name }}</h2>
-        <ul>
-            {% for item in items %}
-            <li>
-                <a href="{{url_for('getCategoryItem', id = category.id, item_id = item.id)}}">{{ item.name }}</a>
-            </li>
-            {% endfor %}
-            <a href="{{url_for('newCategoryItem', id = category.id)}}">Add item</a>
-        </ul>
-        <a href="{{url_for('updateCategory', id = category.id)}}">Edit</a>
-        <a href="{{url_for('deleteCategory', id = category.id)}}">Delete</a>
-    </div>
+<div class="card">
+	<div class="card-body">
+		<h2 class="card-title ">{{ category.name }}</h2>
+		<h5 class="card-text">Items</h5>
+		<table class="table">
+			<thead class="thead-light">
+				<tr>
+					<th>Name</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for item in items %}
+					<tr>
+						<td>
+							<a href="{{url_for('getCategoryItem', id = category.id, item_id = item.id)}}">{{ item.name }}</a>
+						</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+		<div class="list-group">
+		</div>
+		<a class="btn btn-success" role="button" href="{{url_for('newCategoryItem', id = category.id)}}">Add item</a>
+		<a class="btn btn-primary" role="button" href="{{url_for('updateCategory', id = category.id)}}">Edit</a>
+		<a class="btn btn-danger" role="button" href="{{url_for('deleteCategory', id = category.id)}}">Delete</a>
+	</div>
+</div>
 {% endblock %}

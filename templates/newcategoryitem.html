@@ -1,8 +1,14 @@
 {% extends "main.html" %}
 {% block content %}
-<form class="category-item" action="{{url_for('addNewCategoryItem', id = id)}}" method="POST">
-    <input type="text" name="name" placeholder="Nome"/>
-    <input type="text" name="details" placeholder="Detalhes"/>
-    <input type="submit" value="Confirmar"/>
+<form action="{{url_for('addNewCategoryItem', id = id)}}" method="POST">
+	<div class="form-group">
+		<input class="form-control" type="text" name="name" placeholder="Name"/>
+	</div>
+	<div class="form-group">
+		<textarea class="form-control" cols="50" rows="15" name="details" placeholder="Details"></textarea>
+	</div>
+	<div class="form-group">
+		<button class="btn btn-primary" type="submit">Confirm</button>
+	</div>
 </form>
 {% endblock %}

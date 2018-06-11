@@ -1,12 +1,20 @@
 {% extends "main.html" %}
 {% block content %}
-    <div class="categories">
-        <h2>Categories</h2>
-        <ul>
-            {% for category in categories %}
-               <li><a href="{{url_for('getCategory', id = category.id)}}">{{ category.name }}</a></li>
-            {% endfor %}
-        </ul>
-        <a href="{{url_for('newCategory')}}">Add</a>
-    </div>
+<div class="categories">
+	<table class="table">
+		<thead>
+			Categories
+		</thead>
+		<tbody>
+			{% for category in categories %}
+			<tr>
+				<td>
+					<a href="{{url_for('getCategory', id = category.id)}}">{{ category.name }}</a>
+				</td>	
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+	<a href="{{url_for('newCategory')}}">Add</a>
+</div>
 {% endblock %}
