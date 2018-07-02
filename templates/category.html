@@ -22,9 +22,11 @@
 		</table>
 		<div class="list-group">
 		</div>
-		<a class="btn btn-success" role="button" href="{{url_for('newCategoryItem', id = category.id)}}">Add item</a>
-		<a class="btn btn-primary" role="button" href="{{url_for('updateCategory', id = category.id)}}">Edit</a>
-		<a class="btn btn-danger" role="button" href="{{url_for('deleteCategory', id = category.id)}}">Delete</a>
+		{% if 'user_id' in session %}
+			<a class="btn btn-success" role="button" href="{{url_for('newCategoryItem', id = category.id)}}">Add item</a>
+			<a class="btn btn-primary" role="button" href="{{url_for('updateCategory', id = category.id)}}">Edit</a>
+			<a class="btn btn-danger" role="button" href="{{url_for('deleteCategory', id = category.id)}}">Delete</a>
+		{% endif %}
 	</div>
 </div>
 {% endblock %}

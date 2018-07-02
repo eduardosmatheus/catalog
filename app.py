@@ -23,20 +23,13 @@ session = DBSession()
 # Token de acesso à API de login.
 CLIENT_ID = json.loads(open('client-secrets.json', 'r').read())['web']['client_id']
 
-@app.route('/login')
-def login():
-    state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(32))
-    login_session['state'] = state
-    return render_template('main.html', state=state)
-
 # Home page
 @app.route("/", methods=["GET"])
 def home():
-    if 'user_id' in login_session:
-        data = session.query(Category).all()
-        return render_template("categories.html", categories=data)
-    else:
-        return redirect(url_for('login'))
+    state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(32))
+    login_session['state'] = state
+    data = session.query(Category).all()
+    return render_template("categories.html", categories=data, state=state)
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
