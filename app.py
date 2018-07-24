@@ -193,6 +193,30 @@ def getUserID(email):
         return None
 
 
+@app.route('/categories/JSON')
+def categoriesJSON():
+    categories = session.query(Category).all()
+    return jsonify(categories=[c.serialize for c in categories])
+
+
+@app.route('/categories/<int:id>/JSON')
+def categoryJSON(id):
+    category = session.query(Category).get(id)
+    return jsonify(category=category)
+
+
+@app.route('/categories/<int:category_id>/items/JSON')
+def categoryItemsJSON(category_id):
+    items = session.query(CategoryItem).get(category_id)
+    return jsonify(CategoryItems=[i.serialize for i in items])
+
+
+@app.route('/categories/<int:category_id>/items/<int:item_id>/JSON')
+def categoryItemJSON(category_id, item_id):
+    item = session.query(CategoryItem).get(item_id)
+    return jsonify(category_item=item)
+
+
 @app.route('/categories')
 def getCategories():
     categories = session.query(Category).all()
