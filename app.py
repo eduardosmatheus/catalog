@@ -18,14 +18,14 @@ app.secret_key = b'\x98z\xe5\xbb\xce\xba\x7f\x7f\x1bi?\x90\x96X7+'
 
 engine = create_engine('sqlite:///catalog.db')
 Base.metadata.bind = engine
-# Base.metadata.drop_all()
+# Base.metadata.drop_all() <- Uncomment this when there are model changes
 Base.metadata.create_all(engine)
 
-# Sessao do banco
+# Database session
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
-# Token de acesso à API de login.
+# login API access token
 clientsecrets_file = open('client-secrets.json', 'r').read()
 CLIENT_ID = json.loads(clientsecrets_file)['web']['client_id']
 
@@ -41,6 +41,7 @@ def home():
     return render_template("categories.html", categories=data, state=state)
 
 
+# Open a Google API connection with this app
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
     # Validate state token
@@ -114,6 +115,7 @@ def gconnect():
 
     user_id = getUserID(data['email'])
 
+    # Creates an user in database if there isn't one
     if not user_id:
         createUser(login_session)
 
@@ -123,7 +125,10 @@ def gconnect():
 
 @app.route('/gdisconnect')
 def gdisconnect():
+    # Obtain current access token
     access_token = login_session.get('access_token')
+
+    # Check if current access token does exist
     if access_token is None:
         response = make_response(
             json.dumps('Current user not connected.'), 401
@@ -131,12 +136,15 @@ def gdisconnect():
         response.headers['Content-Type'] = 'application/json'
         return response
 
+    # Validate current token with Google Oauth2 API
     url_query = '?access_token=%s' % access_token
     url = 'https://www.googleapis.com/oauth2/v1/tokeninfo%s' % url_query
     validateToken = httplib2.Http()
     result = json.loads(validateToken.request(url, 'GET')[1])
 
+    # If user is still connected, proceed to revoke
     if result.get('error') is None:
+        # Prepare to revoke token
         url_query = '?token=%s' % access_token
         url = 'https://accounts.google.com/o/oauth2/revoke%s' % url_query
         h = httplib2.Http()
@@ -144,6 +152,7 @@ def gdisconnect():
             'content-type': 'application/x-www-form-urlencoded'
         })[0]
 
+        # Clear all login_session variables when succeed
         if result['status'] == '200':
             del login_session['access_token']
             del login_session['gplus_id']
@@ -159,6 +168,7 @@ def gdisconnect():
             response.headers['Content-Type'] = 'application/json'
             return response
     else:
+        # Clear all session variables when token is expired
         del login_session['access_token']
         del login_session['gplus_id']
         del login_session['username']
@@ -249,8 +259,18 @@ def addNewCategory():
     return redirect(url_for("home"))
 
 
+# Updates an existing category
 @app.route("/categories/<int:id>/edit", methods=["GET", "POST"])
 def updateCategory(id):
+    if 'user_id' not in login_session:
+        # Check if there is a session
+        return make_response(json.dumps('User not authenticated'), 403)
+    else:
+        current_user = getUserInfo(login_session['user_id'])
+        # Check if user in session is valid
+        if current_user is None:
+            return make_response(json.dumps('User does not exist.'), 403)
+
     currentCategory = session.query(Category).get(id)
     if request.method == "POST":
         try:
@@ -265,17 +285,28 @@ def updateCategory(id):
 
 @app.route("/categories/<int:id>/delete")
 def deleteCategory(id):
+    if 'user_id' not in login_session:
+        # Check if there is a session
+        return make_response(json.dumps('User not authenticated'), 403)
+    else:
+        current_user = getUserInfo(login_session['user_id'])
+        # Check if user in session is valid
+        if current_user is None:
+            return make_response(json.dumps('User does not exist.'), 403)
+
     currentCategory = session.query(Category).get(id)
     session.delete(currentCategory)
     session.commit()
     return redirect(url_for("home"))
 
 
+# Open category items form
 @app.route("/categories/<int:id>/items/new")
 def newCategoryItem(id):
     return render_template("newcategoryitem.html", id=id)
 
 
+# Adds a new category item, from a existing category
 @app.route('/categories/<int:id>/items', methods=["POST"])
 def addNewCategoryItem(id):
     currentUser = getUserID(login_session['email'])
@@ -293,6 +324,7 @@ def addNewCategoryItem(id):
     return redirect(url_for("home"))
 
 
+# Retrieve an specific category item
 @app.route("/categories/<int:id>/items/<int:item_id>")
 def getCategoryItem(id, item_id):
     item = session.query(CategoryItem).get(item_id)
@@ -301,12 +333,28 @@ def getCategoryItem(id, item_id):
 
 @app.route("/categories/<int:id>/items/<int:item_id>/edit", methods=["GET"])
 def editCategoryItem(id, item_id):
+    if 'user_id' not in login_session:
+        # Check if there is a session
+        return make_response(json.dumps('User not authenticated'), 403)
+    else:
+        current_user = getUserInfo(login_session['user_id'])
+        # Check if user in session is valid
+        if current_user is None:
+            return make_response(json.dumps('User does not exist.'), 403)
+
     currentItem = session.query(CategoryItem).get(item_id)
     return render_template("editcategoryitem.html", item=currentItem)
 
 
 @app.route("/categories/<int:id>/items/<int:item_id>/edit", methods=["POST"])
 def updateCategoryItem(id, item_id):
+    if 'user_id' not in login_session:
+        return make_response(json.dumps('User not authenticated'), 403)
+    else:
+        current_user = getUserInfo(login_session['user_id'])
+        if current_user is None:
+            return make_response(json.dumps('User does not exist.'), 403)
+
     currentItem = session.query(CategoryItem).get(item_id)
     try:
         currentItem.name = request.form["name"]
@@ -319,6 +367,15 @@ def updateCategoryItem(id, item_id):
 
 @app.route("/categories/<int:id>/items/<int:item_id>/delete")
 def deleteCategoryItem(id, item_id):
+    if 'user_id' not in login_session:
+        # Check if there is a session
+        return make_response(json.dumps('User not authenticated'), 403)
+    else:
+        current_user = getUserInfo(login_session['user_id'])
+        # Check if user in session is valid
+        if current_user is None:
+            return make_response(json.dumps('User does not exist.'), 403)
+
     currentItem = session.query(CategoryItem).get(item_id)
     session.delete(currentItem)
     session.commit()
